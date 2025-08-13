@@ -10,6 +10,9 @@ on:
 
 jobs:
   ai-review:
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '/review'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout required scripts
