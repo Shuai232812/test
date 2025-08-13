@@ -45,6 +45,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: "gemini-2.5-pro-latest"  # 使用Gemini 2.5 Flash最新版本
+          GEMINI_MODEL: "gemini-2.5-pro"  # 使用Gemini 2.5 Flash最新版本
         run: |
           python scripts/review_code_by_ai.py
