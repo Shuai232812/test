@@ -186,10 +186,11 @@ def get_ai_response(prompt: str) -> List[Dict[str, str]]:
     print(prompt)
     try:
         response = gemini_model.generate_content(prompt, generation_config=generation_config)
-
+        print("1\n")
         response_text = response.text.strip()
         if response_text.startswith('```json'):
             response_text = response_text[7:]  # Remove ```json
+        print("2\n")
         if response_text.endswith('```'):
             response_text = response_text[:-3]  # Remove ```
         response_text = response_text.strip()
