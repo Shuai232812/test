@@ -8,6 +8,7 @@ import requests
 import fnmatch
 from unidiff import Hunk, PatchedFile, PatchSet
 import concurrent.futures  # 新增这行导入
+import time
 
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 
