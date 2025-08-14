@@ -102,7 +102,7 @@ def analyze_code(parsed_diff: List[Dict[str, Any]], pr_details: PRDetails) -> Li
         print(f"Hunks in file: {len(hunks)}")
         all_hunk=[]
         for hunk_data in hunks:
-            print(f"\nHunk content: {json.dumps(hunk_data, indent=2, ensure_ascii=False)}")
+            print(f"\nHunk content: {json.dumps(hunk_data, indent=2)}")
             hunk_lines = hunk_data.get('lines', [])
             print(f"Number of lines in hunk: {len(hunk_lines)}")
 
@@ -149,7 +149,6 @@ def create_prompt(file: PatchedFile, hunk: Hunk, pr_details: PRDetails) -> str:
     """Creates the prompt for the Gemini model."""
     return f"""Your task is reviewing pull requests. Instructions:
     - Provide the response in following JSON format:  {{"reviews": [{{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}}]}}
-    - ALL review comments in the JSON must be in Chinese
     - Provide comments and suggestions ONLY if there is something to improve, otherwise "reviews" should be an empty array.
     - Use GitHub Markdown in comments
     - Focus on bugs, security issues, and performance problems
@@ -247,7 +246,7 @@ def create_comment(file: FileInfo, hunk: Hunk, ai_responses: List[Dict[str, str]
                 "path": file.path,
                 "position": line_number
             }
-            print(f"Created comment: {json.dumps(comment, indent=2, ensure_ascii=False)}")
+            print(f"Created comment: {json.dumps(comment, indent=2)}")
             comments.append(comment)
 
         except (KeyError, TypeError, ValueError) as e:
@@ -262,7 +261,7 @@ def create_review_comment(
 ):
     """Submits the review comments to the GitHub API."""
     print(f"Attempting to create {len(comments)} review comments")
-    print(f"Comments content: {json.dumps(comments, indent=2, ensure_ascii=False)}")
+    print(f"Comments content: {json.dumps(comments, indent=2)}")
 
     repo = gh.get_repo(f"{owner}/{repo}")
     pr = repo.get_pull(pull_number)
