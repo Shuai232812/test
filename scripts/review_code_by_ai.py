@@ -244,7 +244,7 @@ def create_comment(file: FileInfo, hunk: Hunk, ai_responses: List[Dict[str, str]
                 "path": file.path,
                 "position": line_number
             }
-            print(f"Created comment: {json.dumps(comment, indent=2)}")
+            print(f"Created comment: {json.dumps(comment, indent=2,ensure_ascii=False)}")
             comments.append(comment)
 
         except (KeyError, TypeError, ValueError) as e:
