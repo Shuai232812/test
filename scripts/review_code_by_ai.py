@@ -117,7 +117,7 @@ def analyze_code(parsed_diff: List[Dict[str, Any]], pr_details: PRDetails) -> Li
             hunk.target_length = len(hunk_lines)
             hunk.content = '\n'.join(hunk_lines)
             all_hunk.append(hunk)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             future=[]
             for hunk in all_hunk:
                 future.append(executor.submit(analyze_hunk, file_info, hunk, pr_details))
