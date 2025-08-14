@@ -51,6 +51,7 @@ def get_pr_details() -> PRDetails:
 def get_diff(owner: str, repo: str, pull_number: int) -> str:
     """Fetches the diff of the pull request from GitHub API."""
     # Use the correct repository name format
+
     repo_name = f"{owner}/{repo}"
     print(f"Attempting to get diff for: {repo_name} PR#{pull_number}")
 
@@ -59,12 +60,10 @@ def get_diff(owner: str, repo: str, pull_number: int) -> str:
 
     # Use the GitHub API URL directly
     api_url = f"https://api.github.com/repos/{repo_name}/pulls/{pull_number}"
-
     headers = {
         'Authorization': f'Bearer {GITHUB_TOKEN}',  # Changed to Bearer format
         'Accept': 'application/vnd.github.v3.diff'
     }
-
     response = requests.get(f"{api_url}.diff", headers=headers)
 
     if response.status_code == 200:
@@ -318,52 +317,58 @@ def main():
     event_data = json.load(open(os.environ["GITHUB_EVENT_PATH"], "r"))
 
     event_name = os.environ.get("GITHUB_EVENT_NAME")
-    if event_name == "issue_comment":
+    if event_name == "issue_comment" :
         # Process comment trigger
+
         if not event_data.get("issue", {}).get("pull_request"):
             print("Comment was not on a pull request")
             return
-
-        diff = get_diff(pr_details.owner, pr_details.repo, pr_details.pull_number)
-        if not diff:
-            print("There is no diff found")
+    elif event_name == "pull_request" and event_data["pull_request"]["base"]["ref"] == "main" :
+        if not (event_data["action"] in ["opened", "synchronize"]) :
+            print("PR not opened or synchronized against main branch")
             return
-
-        parsed_diff = parse_diff(diff)
-
-        # Get and clean exclude patterns, handle empty input
-        exclude_patterns_raw = os.environ.get("INPUT_EXCLUDE", "")
-        print(f"Raw exclude patterns: {exclude_patterns_raw}")  # Debug log
-
-        # Only split if we have a non-empty string
-        exclude_patterns = []
-        if exclude_patterns_raw and exclude_patterns_raw.strip():
-            exclude_patterns = [p.strip() for p in exclude_patterns_raw.split(",") if p.strip()]
-        print(f"Exclude patterns: {exclude_patterns}")  # Debug log
-
-        # Filter files before analysis
-        filtered_diff = []
-        for file in parsed_diff:
-            file_path = file.get('path', '')
-            should_exclude = any(fnmatch.fnmatch(file_path, pattern) for pattern in exclude_patterns)
-            if should_exclude:
-                print(f"Excluding file: {file_path}")  # Debug log
-                continue
-            filtered_diff.append(file)
-
-        print(f"Files to analyze after filtering: {[f.get('path', '') for f in filtered_diff]}")  # Debug log
-
-        comments = analyze_code(filtered_diff, pr_details)
-        if comments:
-            try:
-                create_review_comment(
-                    pr_details.owner, pr_details.repo, pr_details.pull_number, comments
-                )
-            except Exception as e:
-                print("Error in create_review_comment:", e)
     else:
         print("Unsupported event:", os.environ.get("GITHUB_EVENT_NAME"))
         return
+
+    diff = get_diff(pr_details.owner, pr_details.repo, pr_details.pull_number)
+    if not diff:
+        print("There is no diff found")
+        return
+
+    parsed_diff = parse_diff(diff)
+
+    # Get and clean exclude patterns, handle empty input
+    exclude_patterns_raw = os.environ.get("INPUT_EXCLUDE", "")
+    print(f"Raw exclude patterns: {exclude_patterns_raw}")  # Debug log
+
+    # Only split if we have a non-empty string
+    exclude_patterns = []
+    if exclude_patterns_raw and exclude_patterns_raw.strip():
+        exclude_patterns = [p.strip() for p in exclude_patterns_raw.split(",") if p.strip()]
+    print(f"Exclude patterns: {exclude_patterns}")  # Debug log
+
+    # Filter files before analysis
+    filtered_diff = []
+    for file in parsed_diff:
+        file_path = file.get('path', '')
+        should_exclude = any(fnmatch.fnmatch(file_path, pattern) for pattern in exclude_patterns)
+        if should_exclude:
+            print(f"Excluding file: {file_path}")  # Debug log
+            continue
+        filtered_diff.append(file)
+
+    print(f"Files to analyze after filtering: {[f.get('path', '') for f in filtered_diff]}")  # Debug log
+
+    comments = analyze_code(filtered_diff, pr_details)
+    if comments:
+        try:
+            create_review_comment(
+                pr_details.owner, pr_details.repo, pr_details.pull_number, comments
+            )
+        except Exception as e:
+            print("Error in create_review_comment:", e)
+
 
 
 if __name__ == "__main__":
