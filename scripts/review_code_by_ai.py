@@ -102,7 +102,7 @@ def analyze_code(parsed_diff: List[Dict[str, Any]], pr_details: PRDetails) -> Li
         print(f"Hunks in file: {len(hunks)}")
         all_hunk=[]
         for hunk_data in hunks:
-            print(f"\nHunk content: {json.dumps(hunk_data, indent=2)}")
+            print(f"\nHunk content: {json.dumps(hunk_data, indent=2, ensure_ascii=False)}")
             hunk_lines = hunk_data.get('lines', [])
             print(f"Number of lines in hunk: {len(hunk_lines)}")
 
@@ -245,7 +245,7 @@ def create_comment(file: FileInfo, hunk: Hunk, ai_responses: List[Dict[str, str]
                 "path": file.path,
                 "position": line_number
             }
-            print(f"Created comment: {json.dumps(comment, indent=2)}")
+            print(f"Created comment: {json.dumps(comment, indent=2, ensure_ascii=False)}")
             comments.append(comment)
 
         except (KeyError, TypeError, ValueError) as e:
@@ -260,7 +260,7 @@ def create_review_comment(
 ):
     """Submits the review comments to the GitHub API."""
     print(f"Attempting to create {len(comments)} review comments")
-    print(f"Comments content: {json.dumps(comments, indent=2)}")
+    print(f"Comments content: {json.dumps(comments, indent=2, ensure_ascii=False)}")
 
     repo = gh.get_repo(f"{owner}/{repo}")
     pr = repo.get_pull(pull_number)
