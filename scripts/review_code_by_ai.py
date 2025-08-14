@@ -233,7 +233,9 @@ def get_ai_response(prompt: str) -> List[Dict[str, str]]:
                 return []
         except Exception as e:
             print(f"Error during Gemini API call: {e}")
-            return []
+            if(i<retry-1):
+                time.sleep(0.5)
+    return  []
 
 
 
