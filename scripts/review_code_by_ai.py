@@ -149,6 +149,7 @@ def create_prompt(file: PatchedFile, hunk: Hunk, pr_details: PRDetails) -> str:
     """Creates the prompt for the Gemini model."""
     return f"""Your task is reviewing pull requests. Instructions:
     - Provide the response in following JSON format:  {{"reviews": [{{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}}]}}
+    - ALL review comments in the JSON must be in Chinese
     - Provide comments and suggestions ONLY if there is something to improve, otherwise "reviews" should be an empty array.
     - Use GitHub Markdown in comments
     - Focus on bugs, security issues, and performance problems
@@ -180,48 +181,60 @@ def get_ai_response(prompt: str) -> List[Dict[str, str]]:
         "temperature": 0.8,
         "top_p": 0.95,
     }
+    safety_settings = {
+        "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
+        "HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
+        "HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
+        "HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE",
+    }
 
     print("===== The promt sent to Gemini is: =====")
     print(prompt)
-    try:
-        response = gemini_model.generate_content(prompt, generation_config=generation_config)
+    retry =3
+    for i in range(retry):
         try:
-            response_text = response.text.strip()
-        except Exception as e:
-            print(e)
-            return  []
-        if response_text.startswith('```json'):
-            response_text = response_text[7:]  # Remove ```json
-        if response_text.endswith('```'):
-            response_text = response_text[:-3]  # Remove ```
-        response_text = response_text.strip()
+            response = gemini_model.generate_content(prompt, generation_config=generation_config,safety_settings=safety_settings)
+            print("1\n")
+            try:
+                response_text = response.text.strip()
+            except Exception as e:
+                print()
+                return  []
 
-        print(f"Cleaned response text: {response_text}")
+            if response_text.startswith('```json'):
+                response_text = response_text[7:]  # Remove ```json
+            print("2\n")
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]  # Remove ```
+            response_text = response_text.strip()
 
-        try:
-            data = json.loads(response_text)
-            print(f"Parsed JSON data: {data}")
+            print(f"Cleaned response text: {response_text}")
 
-            if "reviews" in data and isinstance(data["reviews"], list):
-                reviews = data["reviews"]
-                valid_reviews = []
-                for review in reviews:
-                    if "lineNumber" in review and "reviewComment" in review:
-                        valid_reviews.append(review)
-                    else:
-                        print(f"Invalid review format: {review}")
-                return valid_reviews
-            else:
-                print("Error: Response doesn't contain valid 'reviews' array")
-                print(f"Response content: {data}")
+            try:
+                data = json.loads(response_text)
+                print(f"Parsed JSON data: {data}")
+
+                if "reviews" in data and isinstance(data["reviews"], list):
+                    reviews = data["reviews"]
+                    valid_reviews = []
+                    for review in reviews:
+                        if "lineNumber" in review and "reviewComment" in review:
+                            valid_reviews.append(review)
+                        else:
+                            print(f"Invalid review format: {review}")
+                    return valid_reviews
+                else:
+                    print("Error: Response doesn't contain valid 'reviews' array")
+                    print(f"Response content: {data}")
+                    return []
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON response: {e}")
+                print(f"Raw response: {response_text}")
                 return []
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON response: {e}")
-            print(f"Raw response: {response_text}")
+        except Exception as e:
+            print(f"Error during Gemini API call: {e}")
             return []
-    except Exception as e:
-        print(f"Error during Gemini API call: {e}")
-        return []
+
 
 
 def create_comment(file: FileInfo, hunk: Hunk, ai_responses: List[Dict[str, str]]) -> List[Dict[str, Any]]:
