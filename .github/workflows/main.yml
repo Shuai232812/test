@@ -46,5 +46,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: "gemini-2.5-pro"  # 使用Gemini 2.5 Flash最新版本
+          INPUT_EXCLUDE: "*.lock,*.json,*.md,*.txt,*.yaml,*.yml,Dockerfile,LICENSE"
         run: |
           python scripts/review_code_by_ai.py
